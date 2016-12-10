@@ -7,6 +7,9 @@
 
 // compile with
     // gcc main.c -Wall `pkg-config --cflags --libs gstreamer-1.0 ` -lgstapp-1.0 -DUSE_DOUBLE -lcsound64
+ /*      run with:
+                    ./a.out 1.csd
+       */
 
 
 const gchar *audio_caps =
@@ -112,7 +115,6 @@ int main(int argc, char **argv)
     csoundSetHostImplementedAudioIO(data->csound, 1, 2048);
     csoundSetOutput(data->csound, "dac", NULL, NULL);
     data->csoundbuf = csoundGetSpin(data->csound);
-    g_print("HHHHHHHHEXX %u \n", data->csoundbuf);
     if(result2) exit(-1);
     /*----------------------------------------------------------*/
 
