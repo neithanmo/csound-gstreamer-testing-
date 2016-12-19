@@ -9,22 +9,18 @@
 <CsInstruments>
 
 sr = 44100
-ksmps = 32
-nchnls = 2
+ksmps = 1024
+nchnls = 1
 0dbfs  = 1
 
-instr 1
-
-iflg = p4
-asig oscils .7, 220, 0, iflg
-     outs asig, asig
-
+instr 1 
+aout in
+aout moogladder aout, 50000, 0.25
+	out aout
 endin
 </CsInstruments>
 <CsScore>
 
-i 1 0 3 0
-i 1 3 5 2	;double precision
-e
+i 1 0 20
 </CsScore>
 </CsoundSynthesizer>

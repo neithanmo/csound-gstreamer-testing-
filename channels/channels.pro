@@ -7,3 +7,4 @@ SOURCES += main.c
 unix: CONFIG += link_pkgconfig
 unix: PKGCONFIG += gstreamer-1.0
 unix: PKGCONFIG += gstreamer-video-1.0
+unix: PKGCONFIG += gstreamer-audio-1.0

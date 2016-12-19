@@ -17,13 +17,13 @@ instr 1
 iflg chnget "moog"
 asig chnget "ainput"
 ;asig sum ksig, asig
-asig moogladder asig, 5000, 0.25
+asig moogladder asig, 50000, 0.25
      out asig
 endin
 </CsInstruments>
 <CsScore>
 
-i 1 0 17
+i 1 0 125
 e
 </CsScore>
 </CsoundSynthesizer>
