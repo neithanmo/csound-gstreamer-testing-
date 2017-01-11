@@ -15,12 +15,12 @@ nchnls = 1
 
 instr 1 
 aout in
-aout moogladder aout, 50000, 0.25
+aout reson aout, 6500, 5000
 	out aout
 endin
 </CsInstruments>
 <CsScore>
 
-i 1 0 20
+i 1 0 200
 </CsScore>
 </CsoundSynthesizer>
