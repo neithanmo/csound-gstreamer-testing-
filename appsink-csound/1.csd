@@ -9,13 +9,13 @@
 <CsInstruments>
 
 sr = 44100
-ksmps = 1024
+ksmps = 5
 nchnls = 1
 0dbfs  = 1
 
 instr 1 
 aout in
-aout reson aout, 6500, 5000
+aout reson aout, 5500, 5000
 	out aout
 endin
 </CsInstruments>

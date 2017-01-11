@@ -38,21 +38,25 @@ on_new_sample_from_sink (GstElement * elt, void *data1)
     data->sample = gst_app_sink_pull_sample (GST_APP_SINK (elt));
     data->buffer = gst_sample_get_buffer (data->sample);
     gst_buffer_map(data->buffer, &info, GST_MAP_READ);
-    guint16 a,b=0;
+    guint16 a,b;
     MYFLT CSsample;
     data->num_sample=0;
     int i=0;
-    g_print("data info size %u \n", info.size);
+    //g_print("data info size %u \n", info.size);
     while(data->num_sample < (info.size-1)){
         a = info.data[data->num_sample];
         b = info.data[data->num_sample+1];
        CSsample  = (MYFLT)(b<<8 | a&0x00FF);
         if(i<data->user_ksmps){
             data->csoundbuf[i]=CSsample;
+            i++;
             //g_print("in buffer %g \n", CSsample);
         }
+        if(i==data->user_ksmps){
+            i=0;
+            csoundPerformKsmps(data->csound);
+        }
         data->num_sample=data->num_sample+2;
-        i++;
     }
     gst_sample_unref (data->sample);
     //gst_buffer_unmap(data->buffer);
@@ -68,6 +72,9 @@ on_source_message (GstBus * bus, GstMessage * message, ProgramData * data)
   switch (GST_MESSAGE_TYPE (message)) {
     case GST_MESSAGE_EOS:
       g_print ("The source got dry\n");
+      csoundStop(data->csound);
+      csoundCleanup(data->csound);
+      g_main_loop_quit(data->loop);
       break;
     case GST_MESSAGE_ERROR:
       g_print ("Received error\n");
@@ -117,8 +124,8 @@ int main(int argc, char **argv)
     data->loop = g_main_loop_new (NULL, FALSE);
     data->csd = argv;
     data->args = argc;
-    //string =g_strdup_printf("audiotestsrc wave=6 ! audioconvert ! appsink caps=\"%s\" name=testsink",audio_caps);
-    string =g_strdup_printf("filesrc location=audio.mp3  ! decodebin ! audioconvert ! audiorate "
+    //string = g_strdup_printf("audiotestsrc wave=6 ! audioconvert volume volume=0.5 ! appsink caps=\"%s\" name=testsink",audio_caps);
+    string = g_strdup_printf("filesrc location=audio.mp3  ! decodebin ! audioconvert ! audiorate "
                                 "! audio/x-raw,format=S16LE,channels=1,rate=44100 ! "
                                 "audioconvert ! appsink caps=\"%s\" name=testsink", audio_caps);
     //string =g_strdup_printf("audiotestsrc wave=6 num-buffers=1 ! audioconvert ! appsink caps=\"%s\" name=testsink",audio_caps);
@@ -158,7 +165,7 @@ int main(int argc, char **argv)
 
     /*csound performance thread, it is necesary because gstreamer need its own thread and running
      * the csound performance functions will  locking all application*/
-    void *thread = csoundCreateThread(&performance_function,(void*)data);
+    //void *thread = csoundCreateThread(&performance_function,(void*)data);
 
     g_print ("Let's run!\n");
     g_main_loop_run (data->loop);
