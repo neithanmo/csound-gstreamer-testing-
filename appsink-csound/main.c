@@ -5,6 +5,8 @@
 #include <csound/csound.h>
 #include <gst/app/gstappsrc.h>
 #include <gst/app/gstappsink.h>
+#include <gst/audio/audio.h>
+#include <gst/audio/audio-enumtypes.h>
 
 const gchar *audio_caps =
     "audio/x-raw,format=S16LE,channels=1,rate=44100";
@@ -26,9 +28,12 @@ typedef struct
   GstFlowReturn ret;
   GstMapInfo info;
   GstPad *pad;
+  GstAudioInfo * ainfo;
+  GstAudioFormatInfo * afinfo;
+  GstAudioFormat aformat;
 } ProgramData;
 
-
+GstAudioFormatUnpack extract_audio;
 static GstFlowReturn
 on_new_sample_from_sink (GstElement * elt, void *data1)
 {
@@ -38,29 +43,30 @@ on_new_sample_from_sink (GstElement * elt, void *data1)
     data->sample = gst_app_sink_pull_sample (GST_APP_SINK (elt));
     data->buffer = gst_sample_get_buffer (data->sample);
     gst_buffer_map(data->buffer, &info, GST_MAP_READ);
-    guint16 a,b;
-    MYFLT CSsample;
+    process(info.data, info.size, data);
+    gst_buffer_unmap(data->buffer, &info);
+    gst_sample_unref (data->sample);
+  return data->ret;
+}
+
+void process( gint16 *buf, int size, gpointer *data1)
+{
+    ProgramData *data = (ProgramData *)data1;
+    int num_samples = size/2;//2 bytes por sample
     data->num_sample=0;
-    int i=0;
-    //g_print("data info size %u \n", info.size);
-    while(data->num_sample < (info.size-1)){
-        a = info.data[data->num_sample];
-        b = info.data[data->num_sample+1];
-       CSsample  = (MYFLT)(b<<8 | a&0x00FF);
+
+    int i = 0;
+    while(data->num_sample<num_samples){
         if(i<data->user_ksmps){
-            data->csoundbuf[i]=CSsample;
+            data->csoundbuf[i]=*buf++;
             i++;
-            //g_print("in buffer %g \n", CSsample);
         }
-        if(i==data->user_ksmps){
+        else{
             i=0;
             csoundPerformKsmps(data->csound);
         }
-        data->num_sample=data->num_sample+2;
+        data->num_sample++;
     }
-    gst_sample_unref (data->sample);
-    //gst_buffer_unmap(data->buffer);
-  return data->ret;
 }
 
 
@@ -141,6 +147,11 @@ int main(int argc, char **argv)
     int result2 = csoundCompile(data->csound, data->args, data->csd);
     data->csoundbuf = csoundGetSpin(data->csound);
     data->user_ksmps = csoundGetKsmps(data->csound);
+    int i = 0;
+    while(i<data->user_ksmps){
+        data->csoundbuf[i] = 0;
+        i++;
+    }
     if(result2) exit(-1);
     /*----------------------------------------------------------*/
 
@@ -151,21 +162,14 @@ int main(int argc, char **argv)
     gst_object_unref (bus);
     testsink = gst_bin_get_by_name (GST_BIN (data->source), "testsink");
     g_object_set (G_OBJECT (testsink), "emit-signals", TRUE, "sync", TRUE, NULL);
-    //gst_app_sink_set_drop(testsink, TRUE);
+    gst_app_sink_set_drop(testsink, TRUE);
     //gst_app_sink_set_max_buffers(testsink, 1);
     /* setting the new audio samples callback-------------------*/
     g_signal_connect (testsink, "new-sample",
         G_CALLBACK (on_new_sample_from_sink), (void *)data);
     gst_object_unref (testsink);
 
-
-    /* running the pipeline before to start the csound preformance thread
-      and fill the csound input buffer with audio data  */
     gst_element_set_state (data->source, GST_STATE_PLAYING);
-
-    /*csound performance thread, it is necesary because gstreamer need its own thread and running
-     * the csound performance functions will  locking all application*/
-    //void *thread = csoundCreateThread(&performance_function,(void*)data);
 
     g_print ("Let's run!\n");
     g_main_loop_run (data->loop);
