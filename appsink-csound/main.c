@@ -8,10 +8,10 @@
 #include <gst/audio/audio.h>
 #include <gst/audio/audio-enumtypes.h>
 
-const gchar *audio_caps =
-    "audio/x-raw,format=S16LE,channels=1,rate=44100";
 /*const gchar *audio_caps =
-    "audio/x-raw,format=F32LE,channels=1,rate=44100";*/
+    "audio/x-raw,format=S16LE,channels=1,rate=44100";*/
+const gchar *audio_caps =
+    "audio/x-raw,format=F32LE,channels=1,rate=44100";
 int result;
 typedef struct
 {
@@ -49,12 +49,11 @@ on_new_sample_from_sink (GstElement * elt, void *data1)
   return data->ret;
 }
 
-void process( gint16 *buf, int size, gpointer *data1)
+void process( gfloat *buf, int size, gpointer *data1)
 {
     ProgramData *data = (ProgramData *)data1;
-    int num_samples = size/2;//2 bytes por sample
+    int num_samples = size/4;//2 bytes por sample
     data->num_sample=0;
-
     int i = 0;
     while(data->num_sample<num_samples){
         if(i<data->user_ksmps){
