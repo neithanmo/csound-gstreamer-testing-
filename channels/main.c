@@ -49,14 +49,20 @@ on_new_sample_from_sink (GstElement * elt, void *data1)
         gint16 int16_sample = (gint16)(b<<8 | a&0x00FF);
         if(i<data->user_ksmps){
             data->input_channel[i]=int16_sample;
-            g_print("rot: %d  \n", int16_sample);
-            g_print("gst: %d\n", (gint16)info.data[data->num_sample]);
+            //g_print("rot: %d  \n", int16_sample);
+            //g_print("gst: %d\n", (gint16)info.data[data->num_sample]);
+            i++;
+        }
+        if(i == data->user_ksmps) {
+            i=0;
+            csoundSetAudioChannel(data->csound, "ainput", data->input_channel);
+            csoundPerformKsmps(data->csound);
         }
         data->num_sample=data->num_sample+2;
-        i++;
+        
     }
     data->num_sample=0;
-    csoundSetAudioChannel(data->csound, "ainput", data->input_channel);
+    //csoundSetAudioChannel(data->csound, "ainput", data->input_channel);
     gst_buffer_unmap(data->buffer, &info);
     gst_sample_unref (data->sample);
     return data->ret;
@@ -89,7 +95,7 @@ uintptr_t performance_function(void *data1)
     int i = 0;
     while(csoundPerformKsmps(data->csound) == 0){
            if(i< data->user_ksmps) {
-               g_print("output data %d\n", out[i]);
+               //g_print("output data %d\n", out[i]);
                i++;
            }
            else i=0;
@@ -176,16 +182,16 @@ int main(int argc, char **argv)
     gst_object_unref (bus);
 
     data->app = gst_bin_get_by_name (GST_BIN (data->source), "testsink");
-    g_object_set (G_OBJECT (data->app), "emit-signals", TRUE, "sync", FALSE, NULL);
-    gst_app_sink_set_drop(data->app, TRUE);
-    gst_app_sink_set_max_buffers(data->app, 1);
+    g_object_set (G_OBJECT (data->app), "emit-signals", TRUE, "sync", TRUE, NULL);
+    //gst_app_sink_set_drop(data->app, TRUE);
+    //gst_app_sink_set_max_buffers(data->app, 1);
     /* setting the new audio samples callback-------------------*/
    g_signal_connect (data->app, "new-sample",
         G_CALLBACK (on_new_sample_from_sink), (void *)data);
 
     /* running the pipeline before to start the csound preformance thread*/
     gst_element_set_state (data->source, GST_STATE_PLAYING);
-    void *thread = csoundCreateThread(&performance_function,(void*)data);
+    //void *thread = csoundCreateThread(&performance_function,(void*)data);
 
     g_print ("Let's run!\n");
     g_main_loop_run (data->loop);

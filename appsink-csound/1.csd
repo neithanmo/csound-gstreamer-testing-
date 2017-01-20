@@ -9,10 +9,10 @@
 <CsInstruments>
 
 sr = 44100
-ksmps = 5
+ksmps = 30
 nchnls = 1
 0dbfs  = 1
-
+cpuprc 1, 30
 instr 1 
 aout in
 aout reson aout, 5500, 5000
